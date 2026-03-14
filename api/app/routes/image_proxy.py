@@ -34,19 +34,26 @@ async def image_proxy_root():
 async def proxy_jellyfin_image(item_id: str, image_type: str = "Primary"):
     """
     Proxy Jellyfin images through our backend to avoid CORS and hostname issues
-    
+
     Args:
         item_id: Jellyfin item ID
         image_type: Type of image (Primary, Backdrop, etc.)
     """
     try:
         jellyfin_service = get_jellyfin_service()
-        
+
+        # Ensure Jellyfin settings (base_url, api_key) are loaded before use.
+        # Without this call base_url is None and the request would fail silently.
+        await jellyfin_service._load_jellyfin_settings()
+
+        if not jellyfin_service.base_url:
+            raise HTTPException(status_code=503, detail="Jellyfin not configured")
+
         # Build the image URL
         image_url = f"{jellyfin_service.base_url}/Items/{item_id}/Images/{image_type}"
-        
+
         logger.debug(f"Proxying image request: {image_url}")
-        
+
         # Get the image from Jellyfin
         session = await jellyfin_service._get_session()
         
@@ -82,7 +89,7 @@ async def proxy_jellyfin_image(item_id: str, image_type: str = "Primary"):
 
 @router.get("/proxy/image/{item_id}/thumbnail")
 async def proxy_jellyfin_thumbnail(
-    item_id: str, 
+    item_id: str,
     width: Optional[int] = 300,
     height: Optional[int] = 450,
     quality: Optional[int] = 80,
@@ -92,11 +99,11 @@ async def proxy_jellyfin_thumbnail(
 ):
     """
     Proxy Jellyfin images with thumbnail sizing
-    
+
     Args:
         item_id: Jellyfin item ID
         width: Thumbnail width
-        height: Thumbnail height  
+        height: Thumbnail height
         quality: Image quality (1-100)
         restored: Cache-busting parameter (timestamp when poster was restored)
         refresh: Alternative cache-busting parameter
@@ -104,7 +111,13 @@ async def proxy_jellyfin_thumbnail(
     """
     try:
         jellyfin_service = get_jellyfin_service()
-        
+
+        # Ensure Jellyfin settings are loaded before accessing base_url.
+        await jellyfin_service._load_jellyfin_settings()
+
+        if not jellyfin_service.base_url:
+            raise HTTPException(status_code=503, detail="Jellyfin not configured")
+
         # Build the thumbnail URL with parameters
         image_url = f"{jellyfin_service.base_url}/Items/{item_id}/Images/Primary"
         params = {
