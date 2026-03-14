@@ -168,16 +168,22 @@ class JellyfinService:
         
         self._settings_loaded = True
     
-    async def _get_session(self) -> aiohttp.ClientSession:
-        """Get or create HTTP session with proper Jellyfin headers"""
-        # Always create a new session instead of reusing
-        # This prevents "Event loop is closed" errors in worker environment
-        # and avoids session conflicts during batch processing
-        timeout = aiohttp.ClientTimeout(total=30)
+    async def _get_session(self, timeout_seconds: int = 60) -> aiohttp.ClientSession:
+        """Get or create HTTP session with proper Jellyfin headers.
+
+        Jellyfin 10.11 migrated its library database to EF Core, which can make some
+        queries (especially recursive library scans) significantly slower than on 10.10.
+        The default timeout has been raised to 60 s to accommodate this. Callers that
+        need a shorter or longer timeout can pass ``timeout_seconds`` explicitly.
+        """
+        # Always create a new session instead of reusing.
+        # This prevents "Event loop is closed" errors in the worker environment
+        # and avoids session conflicts during batch processing.
+        timeout = aiohttp.ClientTimeout(total=timeout_seconds)
         # Use X-Emby-Token header like v1, not URL parameters
         headers = {
             "X-Emby-Token": self.api_key,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         return aiohttp.ClientSession(timeout=timeout, headers=headers)
     
@@ -263,74 +269,105 @@ class JellyfinService:
             return []
     
     async def get_library_items(self, library_id: str) -> List[Dict[str, Any]]:
-        """Get all items from a specific library using user-specific API for reliability"""
+        """Get all items from a specific library using user-specific API for reliability.
+
+        Jellyfin 10.11 introduced a significant performance regression when fetching
+        library items without an explicit type filter. Using IncludeItemTypes avoids
+        the expensive recursive query over all item types (movies, episodes, seasons,
+        specials, …) and limits results to the types Aphrodite actually needs.
+        Items are fetched in pages of 500 to avoid request timeouts on large libraries.
+        """
         try:
             # Load settings first
             await self._load_jellyfin_settings()
-            
+
             if not self.base_url or not self.api_key:
                 self.logger.error("Jellyfin not configured")
                 return []
-            
-            # Use user-specific API if available (more reliable than general /Items endpoint)
-            if self.user_id:
-                url = urljoin(
-                    self.base_url,
-                    f"/Users/{self.user_id}/Items"
-                )
-                
-                # Add Fields parameter to include Tags for badge status detection
-                params = {
-                    "ParentId": library_id,
-                    "Recursive": "true",
-                    "Fields": "Tags,Genres,Overview,ProductionYear,CommunityRating,OfficialRating"
-                }
-                
-                session = await self._get_session()
-                
-                try:
-                    async with session.get(url, params=params) as response:
-                        if response.status == 200:
-                            data = await response.json()
-                            items = data.get("Items", [])
-                            self.logger.info(f"Found {len(items)} items in library {library_id} via user API")
-                            return items
-                        else:
-                            self.logger.warning(f"User API failed for library items: HTTP {response.status}, falling back to general API")
-                finally:
-                    await session.close()
-            
-            # Fallback to general API
-            url = urljoin(
-                self.base_url,
-                f"/Items"
-            )
-            
-            # Add Fields parameter to include Tags for badge status detection
-            params = {
+
+            # Jellyfin 10.11: always include an explicit type filter so the new
+            # EF-Core-backed database only has to touch the rows we care about.
+            base_params = {
                 "ParentId": library_id,
                 "Recursive": "true",
-                "Fields": "Tags,Genres,Overview,ProductionYear,CommunityRating,OfficialRating"
+                # Only fetch top-level media items; episodes/seasons/specials are
+                # filtered out later anyway and fetching them is very slow in 10.11.
+                "IncludeItemTypes": "Movie,Series",
+                "Fields": "Tags,Genres,Overview,ProductionYear,CommunityRating,OfficialRating",
             }
-            
+
+            return await self._fetch_all_pages(library_id, base_params)
+
+        except Exception as e:
+            self.logger.error(f"Error getting library items: {e}")
+            return []
+
+    async def _fetch_all_pages(self, library_id: str, base_params: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Fetch all pages of library items using pagination to avoid timeouts."""
+        PAGE_SIZE = 500
+        all_items: List[Dict[str, Any]] = []
+        start_index = 0
+
+        while True:
+            params = {**base_params, "StartIndex": start_index, "Limit": PAGE_SIZE}
+
+            page_items = await self._fetch_items_page(library_id, params)
+            if page_items is None:
+                # Unrecoverable error – return whatever we got so far
+                break
+
+            all_items.extend(page_items)
+            self.logger.debug(
+                f"Library {library_id}: fetched {len(page_items)} items "
+                f"(StartIndex={start_index}, total so far={len(all_items)})"
+            )
+
+            if len(page_items) < PAGE_SIZE:
+                # Last page reached
+                break
+
+            start_index += PAGE_SIZE
+
+        self.logger.info(f"Fetched {len(all_items)} items total from library {library_id}")
+        return all_items
+
+    async def _fetch_items_page(self, library_id: str, params: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
+        """Fetch a single page of items, trying user API first then general API."""
+        await self._load_jellyfin_settings()
+
+        # User-specific API (preferred)
+        if self.user_id:
+            url = urljoin(self.base_url, f"/Users/{self.user_id}/Items")
             session = await self._get_session()
-            
             try:
                 async with session.get(url, params=params) as response:
                     if response.status == 200:
                         data = await response.json()
-                        items = data.get("Items", [])
-                        self.logger.info(f"Found {len(items)} items in library {library_id} via general API")
-                        return items
-                    else:
-                        self.logger.error(f"Failed to get library items: HTTP {response.status}")
-                        return []
+                        return data.get("Items", [])
+                    self.logger.warning(
+                        f"User API failed for library {library_id} page: HTTP {response.status}, "
+                        "falling back to general API"
+                    )
+            except Exception as e:
+                self.logger.warning(f"User API error for library page: {e}, falling back to general API")
             finally:
                 await session.close()
-                    
+
+        # Fallback to general API
+        url = urljoin(self.base_url, "/Items")
+        session = await self._get_session()
+        try:
+            async with session.get(url, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data.get("Items", [])
+                self.logger.error(f"Failed to get library items page: HTTP {response.status}")
+                return None
         except Exception as e:
-            self.logger.error(f"Error getting library items: {e}")
-            return []
+            self.logger.error(f"General API error fetching library page: {e}")
+            return None
+        finally:
+            await session.close()
     
     async def get_item_details(self, item_id: str) -> Optional[Dict[str, Any]]:
         """Get detailed information for a specific item (uses user-specific API first as it's more reliable)"""
@@ -640,7 +677,8 @@ class JellyfinService:
             }
             
             # Upload using Base64 body (not multipart form data)
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
+            # Raise the upload timeout to 120 s – Jellyfin 10.11 image write can be slow.
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=120)) as session:
                 async with session.post(url, headers=headers, data=b64_data) as response:
                     if response.status in [200, 204]:
                         self.logger.info(f"Successfully uploaded poster for item {item_id}")

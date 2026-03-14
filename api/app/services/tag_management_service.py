@@ -285,36 +285,45 @@ class TagManagementService:
             # Use the user-specific endpoint like v1 does
             url = urljoin(self.base_url, f"/Users/{self.user_id}/Items/{item_id}")
             session = await self.jellyfin_service._get_session()
-            
-            async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    tags = data.get("Tags", []) or []  # Handle None case
-                    self.logger.debug(f"Retrieved {len(tags)} tags for item {item_id}: {tags}")
-                    return tags
-                else:
-                    response_text = await response.text()
-                    self.logger.error(f"Failed to get item {item_id}: HTTP {response.status} - {response_text}")
-                    return None
-                    
+
+            try:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        tags = data.get("Tags", []) or []  # Handle None case
+                        self.logger.debug(f"Retrieved {len(tags)} tags for item {item_id}: {tags}")
+                        return tags
+                    else:
+                        response_text = await response.text()
+                        self.logger.error(f"Failed to get item {item_id}: HTTP {response.status} - {response_text}")
+                        return None
+            finally:
+                await session.close()
+
         except Exception as e:
             self.logger.error(f"Error getting tags for item {item_id}: {e}")
             return None
     
     async def _update_item_tags(self, item_id: str, tags: List[str]) -> bool:
-        """Update tags for an item using Jellyfin API (following v1 pattern)"""
+        """Update tags for an item using Jellyfin API (following v1 pattern).
+
+        Jellyfin 10.11 migrated to EF Core. The POST /Items/{id} endpoint is still
+        the correct way to update item metadata, but it requires a complete item
+        payload — partial payloads caused NullReferenceExceptions in older builds.
+        We fetch the full item first and then send it back with the updated Tags field.
+        """
+        session = await self.jellyfin_service._get_session()
         try:
             # First get the full item data using user-specific endpoint
             get_url = urljoin(self.base_url, f"/Users/{self.user_id}/Items/{item_id}")
-            session = await self.jellyfin_service._get_session()
-            
+
             async with session.get(get_url) as response:
                 if response.status != 200:
                     self.logger.error(f"Failed to get item data for {item_id}: HTTP {response.status}")
                     return False
-                
+
                 item_data = await response.json()
-            
+
             # Create a comprehensive update payload following v1 pattern
             update_payload = {
                 "Id": item_id,
@@ -323,37 +332,45 @@ class TagManagementService:
                 "LockedFields": item_data.get("LockedFields", []),
                 "ServerId": item_data.get("ServerId"),
                 "Type": item_data.get("Type"),
-                "UserData": item_data.get("UserData", {})
+                "UserData": item_data.get("UserData", {}),
             }
-            
+
             # Add essential metadata fields that Jellyfin expects
             essential_fields = [
                 "Overview", "ProductionYear", "CommunityRating", "OfficialRating",
                 "Genres", "Studios", "People", "ProviderIds", "PremiereDate",
                 "EndDate", "RunTimeTicks", "DisplayOrder", "SortName",
                 "ForcedSortName", "OriginalTitle", "DateCreated",
-                "ExternalUrls", "MediaType", "Width", "Height"
+                "ExternalUrls", "MediaType", "Width", "Height",
+                # Jellyfin 10.11 EF Core migration: these fields are now explicitly
+                # tracked in the DB schema and must be present to avoid null violations.
+                "IndexNumber", "ParentIndexNumber", "IsFolder", "MediaType",
+                "LocationType", "CollectionType",
             ]
-            
+
             for field in essential_fields:
                 if field in item_data and item_data[field] is not None:
                     update_payload[field] = item_data[field]
-            
+
             # Use the standard update endpoint
             update_url = urljoin(self.base_url, f"/Items/{item_id}")
-            
+
             async with session.post(update_url, json=update_payload) as response:
                 if response.status in [200, 204]:
                     self.logger.debug(f"Successfully updated tags for item {item_id} to: {tags}")
                     return True
                 else:
                     response_text = await response.text()
-                    self.logger.error(f"Failed to update item {item_id}: HTTP {response.status} - {response_text}")
+                    self.logger.error(
+                        f"Failed to update item {item_id}: HTTP {response.status} - {response_text}"
+                    )
                     return False
-                    
+
         except Exception as e:
             self.logger.error(f"Error updating tags for item {item_id}: {e}")
             return False
+        finally:
+            await session.close()
     
     async def _update_item_tags_alternative(self, item_id: str, tags: List[str], item_data: Dict[str, Any]) -> bool:
         """Alternative method to update item tags using library management endpoint"""
