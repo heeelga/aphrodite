@@ -201,11 +201,29 @@ class JellyfinService:
             
             self._last_request_time = datetime.now()
     
+    def reset_settings_cache(self):
+        """Invalidate the cached Jellyfin credentials so they are re-read from the
+        database on the next API call.
+
+        Call this whenever the settings.yaml is updated via the Settings page so
+        that the singleton picks up the new URL / API key / user_id immediately
+        without requiring a container restart.
+        """
+        self._settings_loaded = False
+        self.base_url = None
+        self.api_key = None
+        self.user_id = None
+        self.logger.info("Jellyfin settings cache invalidated – will reload on next request")
+
     async def close(self):
-        """Close HTTP session"""
+        """Close HTTP session and reset settings cache so the next caller gets
+        fresh credentials from the database."""
         if self.session:
             await self.session.close()
             self.session = None
+        # Reset settings so that a subsequent call (e.g. the Diagnostics page
+        # right after the Settings page was saved) always loads the latest values.
+        self.reset_settings_cache()
     
     async def test_connection(self) -> Tuple[bool, str]:
         """Test connection to Jellyfin server"""
