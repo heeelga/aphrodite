@@ -186,15 +186,35 @@ async def update_config(
             logger.info(f"Created new configuration: {filename}")
         
         await db.commit()
-        
+
         # Clear settings cache for this configuration
         from app.services.settings_service import settings_service
         settings_service.clear_cache(filename)
-        
+
+        # If Jellyfin credentials were updated, reset the JellyfinService singleton
+        # so it picks up the new URL / API key / user_id on the very next request.
+        # Without this the singleton keeps the old (possibly empty) credentials that
+        # were loaded at startup, which causes Diagnostics to return 502 even after
+        # the user has successfully saved new settings via the Settings page.
+        if filename == "settings.yaml":
+            try:
+                from app.services.jellyfin_service import get_jellyfin_service
+                get_jellyfin_service().reset_settings_cache()
+                logger.info("Jellyfin service settings cache invalidated after settings.yaml update")
+            except Exception as e:
+                logger.warning(f"Could not reset Jellyfin service cache: {e}")
+
+            try:
+                from app.services.tag_management_service import get_tag_management_service
+                get_tag_management_service().reset_config_cache()
+                logger.info("Tag management service config cache invalidated after settings.yaml update")
+            except Exception as e:
+                logger.warning(f"Could not reset tag management service cache: {e}")
+
         # If this is a badge settings file, also clear the compatibility layer cache
         if 'badge_settings' in filename:
             settings_service.invalidate_badge_cache()
-            
+
             # Clear the compatibility layer cache as well
             try:
                 from aphrodite_helpers.settings_compat import _settings_compat
@@ -203,7 +223,7 @@ async def update_config(
                     logger.info(f"Cleared compatibility layer cache for {filename}")
             except Exception as e:
                 logger.warning(f"Could not clear compatibility layer cache: {e}")
-        
+
         return BaseResponse(message=f"Configuration {filename} saved successfully")
         
     except Exception as e:

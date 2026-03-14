@@ -40,6 +40,14 @@ class TagManagementService:
         self.user_id = None
         self._jellyfin_config = None
     
+    def reset_config_cache(self):
+        """Invalidate the cached Jellyfin config so it is re-read from the
+        database on the next tag operation."""
+        self._jellyfin_config = None
+        self.base_url = None
+        self.api_key = None
+        self.user_id = None
+
     async def _get_jellyfin_config(self) -> Optional[Dict[str, Any]]:
         """Load Jellyfin configuration from database"""
         if self._jellyfin_config is not None:
