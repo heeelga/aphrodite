@@ -356,6 +356,54 @@ export default function PosterManagerPage() {
     await loadJobCount() // Refresh job count after operations
   }
 
+  const handleBulkTagOperation = async (operation: 'add' | 'remove') => {
+    if (selectedItems.size === 0) return
+
+    const itemIds = Array.from(selectedItems)
+    const endpoint = operation === 'add'
+      ? '/api/v1/poster-manager/tags/add'
+      : '/api/v1/poster-manager/tags/remove'
+
+    try {
+      const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_ids: itemIds, tag_name: 'aphrodite-overlay' }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      // Update badge_status in the local items list immediately so the
+      // grid reflects the change without a full reload.
+      const hasTag = operation === 'add'
+      setItems(prevItems =>
+        prevItems.map(item =>
+          itemIds.includes(item.id)
+            ? { ...item, badge_status: hasTag ? 'BADGED' : 'ORIGINAL' }
+            : item
+        )
+      )
+
+      const count = result.processed_count ?? itemIds.length
+      const label = operation === 'add' ? 'applied to' : 'removed from'
+      toast.success(`Aphrodite tag ${label} ${count} item${count !== 1 ? 's' : ''}`)
+
+      if (result.failed_items?.length > 0) {
+        toast.warning(`${result.failed_items.length} item${result.failed_items.length !== 1 ? 's' : ''} could not be updated`)
+      }
+
+      setSelectedItems(new Set())
+      setSelectionMode(false)
+    } catch (error) {
+      console.error('Bulk tag operation failed:', error)
+      toast.error(`Failed to ${operation === 'add' ? 'apply' : 'remove'} Aphrodite tag`)
+    }
+  }
+
   // Pagination handlers (same as original)
   const handlePageChange = (page: number) => {
     if (searchQuery || badgeFilter !== 'all') {
@@ -551,6 +599,7 @@ export default function PosterManagerPage() {
             allItems={items}
             onClearSelection={handleSelectNone}
             onRefreshItems={refreshItemsAndClearSelection}
+            onBulkTagOperation={handleBulkTagOperation}
             disabled={loading}
           />
 

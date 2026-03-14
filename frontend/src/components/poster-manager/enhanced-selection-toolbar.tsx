@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { X, Zap, Users, Settings, Download, Trash2, Image } from "lucide-react"
+import { X, Zap, Users, Settings, Download, Trash2, Image, Tag } from "lucide-react"
 import { ProcessingDecision, BatchJobCreator } from '@/components/workflow'
 import { useNotifications } from '@/components/workflow'
 import { useRouter } from 'next/navigation'
@@ -27,6 +27,7 @@ interface EnhancedSelectionToolbarProps {
   allItems: MediaItem[]
   onClearSelection: () => void
   onRefreshItems: () => Promise<void>
+  onBulkTagOperation?: (operation: 'add' | 'remove') => Promise<void>
   disabled?: boolean
 }
 
@@ -36,10 +37,12 @@ export const EnhancedSelectionToolbar: React.FC<EnhancedSelectionToolbarProps> =
   allItems,
   onClearSelection,
   onRefreshItems,
+  onBulkTagOperation,
   disabled = false
 }) => {
   const [showBatchCreator, setShowBatchCreator] = useState(false)
   const [showReplacementModal, setShowReplacementModal] = useState(false)
+  const [tagOperationLoading, setTagOperationLoading] = useState(false)
   const { showJobCreated } = useNotifications()
   const router = useRouter()
 
@@ -69,9 +72,19 @@ export const EnhancedSelectionToolbar: React.FC<EnhancedSelectionToolbarProps> =
     showJobCreated(`Batch Job Created`, selectedCount)
     setShowBatchCreator(false)
     onClearSelection()
-    
+
     // Optional: Switch to Jobs tab to show the new job
     // This could be implemented as a callback prop
+  }
+
+  const handleBulkTag = async (operation: 'add' | 'remove') => {
+    if (!onBulkTagOperation) return
+    setTagOperationLoading(true)
+    try {
+      await onBulkTagOperation(operation)
+    } finally {
+      setTagOperationLoading(false)
+    }
   }
 
   if (selectedCount === 0) {
@@ -151,9 +164,37 @@ export const EnhancedSelectionToolbar: React.FC<EnhancedSelectionToolbarProps> =
                 </Button>
               </>
             )}
-
-            
           </div>
+
+          {/* Aphrodite Tag Actions – available for any selection size */}
+          {onBulkTagOperation && (
+            <>
+              <Separator />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground shrink-0">Aphrodite Tag:</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkTag('add')}
+                  disabled={disabled || tagOperationLoading}
+                  className="flex-1"
+                >
+                  <Tag className="h-4 w-4 mr-2" />
+                  {tagOperationLoading ? 'Processing…' : `Apply to ${selectedCount} item${selectedCount !== 1 ? 's' : ''}`}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkTag('remove')}
+                  disabled={disabled || tagOperationLoading}
+                  className="flex-1"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  {tagOperationLoading ? 'Processing…' : `Remove from ${selectedCount} item${selectedCount !== 1 ? 's' : ''}`}
+                </Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
