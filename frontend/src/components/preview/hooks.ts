@@ -10,6 +10,7 @@ import {
   MediaSearchParams,
   ProcessingJob
 } from './types';
+import { getApiBaseUrl } from '@/lib/utils'
 
 export function usePreviewData() {
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export function usePreviewData() {
       console.log('Loading preview page data...');
       
       // Load badge types
-      const badgeTypesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/preview/badge-types`);
+      const badgeTypesResponse = await fetch(`${getApiBaseUrl()}/api/v1/preview/badge-types`);
       const badgeTypesData = await badgeTypesResponse.json();
 
       console.log('Loaded preview data:', { badgeTypesData });
@@ -82,7 +83,7 @@ export function usePreviewGeneration() {
     setCurrentPreview({ error: undefined, previewUrl: undefined });
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/preview/generate`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/preview/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +173,7 @@ export function useLibraryBrowser() {
     setLoading(prev => ({ ...prev, libraries: true }));
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/preview/libraries`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/preview/libraries`);
       const data = await response.json();
       
       if (data.success) {
@@ -204,7 +205,7 @@ export function useLibraryBrowser() {
       if (params.limit) searchParams.set('limit', params.limit.toString());
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/preview/media?${searchParams}`
+        `${getApiBaseUrl()}/api/v1/preview/media?${searchParams}`
       );
       const data = await response.json();
       
@@ -260,7 +261,7 @@ export function useProcessingQueue() {
     setLoading(true);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/jobs?status=pending,running`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/jobs?status=pending,running`);
       const data = await response.json();
       
       if (data.success) {
@@ -276,7 +277,7 @@ export function useProcessingQueue() {
   // Add job to queue
   const addJob = async (mediaIds: string[], badgeTypes: string[]): Promise<boolean> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/jobs`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -310,7 +311,7 @@ export function useProcessingQueue() {
   // Cancel job
   const cancelJob = async (jobId: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/jobs/${jobId}`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/jobs/${jobId}`, {
         method: 'DELETE'
       });
 

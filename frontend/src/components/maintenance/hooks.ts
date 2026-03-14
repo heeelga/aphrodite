@@ -11,6 +11,7 @@ import {
   LogEntry,
   LogFileInfo
 } from './types';
+import { getApiBaseUrl } from '@/lib/utils'
 
 export function useMaintenanceData() {
   const [loading, setLoading] = useState(false);
@@ -25,8 +26,8 @@ export function useMaintenanceData() {
       
       // Load database info and logs data in parallel
       const [databaseResponse, logsLevelsResponse] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/database/status`),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/logs/levels`)
+        fetch(`${getApiBaseUrl()}/api/v1/maintenance/database/status`),
+        fetch(`${getApiBaseUrl()}/api/v1/maintenance/logs/levels`)
       ]);
 
       const databaseData = await databaseResponse.json();
@@ -96,7 +97,7 @@ export function useConnectionTesting() {
       let testData = {};
 
       // Get current configuration first for the specific service
-      const configResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/config/settings.yaml`);
+      const configResponse = await fetch(`${getApiBaseUrl()}/api/v1/config/settings.yaml`);
       const configData = await configResponse.json();
       const config = configData.config;
 
@@ -193,7 +194,7 @@ export function useConnectionTesting() {
       }
 
       // Make the test request
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+      const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -292,9 +293,9 @@ export function useDatabaseOperations() {
     setLoading(prev => ({ ...prev, info: true }));
     
     try {
-      console.log('Loading database info from:', `${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/database/status`);
+      console.log('Loading database info from:', `${getApiBaseUrl()}/api/v1/maintenance/database/status`);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/database/status`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/maintenance/database/status`);
       
       console.log('Database info response status:', response.status);
       
@@ -326,7 +327,7 @@ export function useDatabaseOperations() {
     setLoading(prev => ({ ...prev, backup: true }));
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/database/backup`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/maintenance/database/backup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -362,7 +363,7 @@ export function useDatabaseOperations() {
     setLoading(prev => ({ ...prev, restore: true }));
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/database/restore`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/maintenance/database/restore`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -398,7 +399,7 @@ export function useDatabaseOperations() {
     setLoading(prev => ({ ...prev, export: true }));
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/database/export`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/maintenance/database/export`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -458,7 +459,7 @@ export function useDatabaseOperations() {
     
     try {
       // First, try without confirmation to check what's needed
-      const initialResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/database/import-settings`, {
+      const initialResponse = await fetch(`${getApiBaseUrl()}/api/v1/maintenance/database/import-settings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -472,7 +473,7 @@ export function useDatabaseOperations() {
         // Backend is asking for confirmation, now send with confirmation
         console.log('Backend requires confirmation for import, proceeding with confirmed request');
         
-        const confirmedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/database/import-settings`, {
+        const confirmedResponse = await fetch(`${getApiBaseUrl()}/api/v1/maintenance/database/import-settings`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -569,7 +570,7 @@ export function useLogsViewer() {
       if (searchQuery) params.append('search', searchQuery);
       params.append('limit', '1000');
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/logs?${params}`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/maintenance/logs?${params}`);
       const data = await response.json();
       
       if (data.success) {
@@ -594,7 +595,7 @@ export function useLogsViewer() {
   // Fetch available log levels
   const fetchLogLevels = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/logs/levels`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/maintenance/logs/levels`);
       const data = await response.json();
       
       if (data.success) {
@@ -608,7 +609,7 @@ export function useLogsViewer() {
   // Clear logs
   const clearLogs = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/logs/clear`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/maintenance/logs/clear`, {
         method: 'DELETE'
       });
       
@@ -650,7 +651,7 @@ export function useLogsViewer() {
   // Download logs
   const downloadLogs = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/maintenance/logs/download`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/maintenance/logs/download`);
       
       if (response.ok) {
         const blob = await response.blob();

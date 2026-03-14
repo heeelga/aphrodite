@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { saveSettingsWithCacheClear } from '@/lib/settings-utils';
 import { loadAvailableFonts } from '@/lib/font-utils';
 import { ResolutionSettings, defaultResolutionSettings } from './types';
+import { getApiBaseUrl } from '@/lib/utils'
 
 export function useResolutionSettings() {
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,7 @@ export function useResolutionSettings() {
     try {
       console.log('Loading resolution settings...');
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/config/badge_settings_resolution.yml`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/config/badge_settings_resolution.yml`);
       const data = await response.json();
       
       console.log('Loaded resolution config:', data);
@@ -165,7 +166,7 @@ export function useResolutionSettings() {
   // Diagnostic API functions
   const runImageCoverageAnalysis = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings/resolution/coverage`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/settings/resolution/coverage`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -176,7 +177,7 @@ export function useResolutionSettings() {
 
   const getCacheStats = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings/resolution/cache/stats`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/settings/resolution/cache/stats`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -187,7 +188,7 @@ export function useResolutionSettings() {
 
   const clearResolutionCache = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings/resolution/cache`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/settings/resolution/cache`, {
         method: 'DELETE'
       });
       const data = await response.json();
@@ -200,7 +201,7 @@ export function useResolutionSettings() {
 
   const testEnhancedDetection = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings/resolution/test`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/settings/resolution/test`, {
         method: 'POST'
       });
       const data = await response.json();

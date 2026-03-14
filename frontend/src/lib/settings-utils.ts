@@ -1,9 +1,11 @@
+import { getApiBaseUrl } from './utils'
+
 /**
  * Saves badge settings to the API and clears the server-side config cache
  * so that the next read picks up the new values.
  */
 export async function saveSettingsWithCacheClear(filename: string, settings: unknown): Promise<void> {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_API_URL ?? '')
+  const baseUrl = getApiBaseUrl()
 
   // 1. Persist the settings
   const saveResponse = await fetch(`${baseUrl}/api/v1/config/${filename}`, {

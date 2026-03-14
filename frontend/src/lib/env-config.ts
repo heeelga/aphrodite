@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from './utils'
+
 /**
  * Returns an absolute URL for the given path.
  * In the browser we always use the current origin so relative API paths work
@@ -12,12 +14,6 @@ export function makeAbsoluteUrl(url: string | undefined): string {
     return url
   }
 
-  // In the browser use the current origin
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}${url.startsWith('/') ? '' : '/'}${url}`
-  }
-
-  // Server-side: use configured API URL or empty string (relative)
-  const base = process.env.NEXT_PUBLIC_API_URL ?? ''
+  const base = getApiBaseUrl()
   return `${base}${url.startsWith('/') ? '' : '/'}${url}`
 }
