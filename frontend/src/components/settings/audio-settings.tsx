@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { saveSettingsWithCacheClear } from '@/lib/settings-utils';
 import { FontSelect } from '@/components/ui/font-select';
 import { loadAvailableFonts } from '@/lib/font-utils';
+import { getApiBaseUrl } from '@/lib/utils'
 
 interface AudioSettings {
   General: {
@@ -121,7 +122,7 @@ export function AudioSettings() {
     setLoading(true);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/config/badge_settings_audio.yml`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/config/badge_settings_audio.yml`);
       const data = await response.json();
       
       if (data.config && Object.keys(data.config).length > 0) {

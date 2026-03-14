@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from '@/lib/utils'
 /**
  * API Service for Aphrodite v2 Frontend
  * Handles all HTTP requests to the backend API
@@ -11,7 +12,7 @@ const getApiBaseUrl = () => {
   }
   
   // Server-side: use environment variable or empty for relative URLs
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = getApiBaseUrl();
   if (apiUrl === undefined || apiUrl === '') {
     // Empty means use relative URLs
     return '';

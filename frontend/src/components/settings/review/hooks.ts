@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { saveSettingsWithCacheClear } from '@/lib/settings-utils';
 import { ReviewSettings, ReviewSource, ReviewSourceSettings, defaultReviewSettings, defaultReviewSourceSettings, defaultReviewSources } from './types';
+import { getApiBaseUrl } from '@/lib/utils'
 
 export function useReviewSettings() {
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,7 @@ export function useReviewSettings() {
     try {
       console.log('Loading review settings...');
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/config/badge_settings_review.yml`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/config/badge_settings_review.yml`);
       const data = await response.json();
       
       console.log('Loaded review config:', data);
@@ -291,7 +292,7 @@ export function useReviewSettings() {
     try {
       console.log('Saving review source settings:', settingsToSave);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/config/review_source_settings`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/config/review_source_settings`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -322,7 +323,7 @@ export function useReviewSettings() {
     try {
       console.log('Loading review source settings...');
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/config/review_source_settings`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/config/review_source_settings`);
       
       if (response.ok) {
         const data = await response.json();

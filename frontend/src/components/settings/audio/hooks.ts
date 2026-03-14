@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { saveSettingsWithCacheClear } from '@/lib/settings-utils';
 import { loadAvailableFonts } from '@/lib/font-utils';
 import { AudioSettings, AudioCoverageReport, AudioCacheStats, AudioDetectionTestResult } from './types';
+import { getApiBaseUrl } from '@/lib/utils'
 
 const defaultSettings: AudioSettings = {
   General: {
@@ -103,7 +104,7 @@ export function useAudioSettings() {
     setLoading(true);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/config/badge_settings_audio.yml`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/config/badge_settings_audio.yml`);
       const data = await response.json();
       
       if (data.config && Object.keys(data.config).length > 0) {
@@ -221,7 +222,7 @@ export function useAudioSettings() {
   // Diagnostic functions
   const runAudioCoverageAnalysis = useCallback(async (): Promise<AudioCoverageReport | null> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings/audio/coverage`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/settings/audio/coverage`);
       if (!response.ok) throw new Error(`Analysis failed: ${response.statusText}`);
       return await response.json();
     } catch (error) {
@@ -233,7 +234,7 @@ export function useAudioSettings() {
 
   const getCacheStats = useCallback(async (): Promise<AudioCacheStats | null> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings/audio/cache/stats`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/settings/audio/cache/stats`);
       if (!response.ok) throw new Error(`Cache stats failed: ${response.statusText}`);
       return await response.json();
     } catch (error) {
@@ -245,7 +246,7 @@ export function useAudioSettings() {
 
   const clearAudioCache = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings/audio/cache`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/settings/audio/cache`, {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error(`Cache clear failed: ${response.statusText}`);
@@ -260,7 +261,7 @@ export function useAudioSettings() {
 
   const testEnhancedDetection = useCallback(async (testData?: any): Promise<AudioDetectionTestResult | null> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings/audio/test`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/settings/audio/test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

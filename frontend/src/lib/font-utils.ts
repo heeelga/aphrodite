@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from './utils'
+
 export interface FontSelectProps {
   value: string
   onValueChange: (value: string) => void
@@ -25,8 +27,7 @@ export function getCombinedFontList(apifonts: string[]): string[] {
  */
 export async function loadAvailableFonts(): Promise<string[]> {
   try {
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_API_URL ?? '')
-    const response = await fetch(`${baseUrl}/api/v1/config/available-fonts`)
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/config/available-fonts`)
     if (!response.ok) return BUILT_IN_FONTS
 
     const data = await response.json()

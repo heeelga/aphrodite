@@ -9,6 +9,7 @@ import {
   SystemStats,
   LogEntry
 } from './types';
+import { getApiBaseUrl } from '@/lib/utils'
 
 export function useAboutData() {
   const [loading, setLoading] = useState(false);
@@ -24,10 +25,10 @@ export function useAboutData() {
       
       // Load system info, health status, and stats in parallel
       const [systemResponse, healthResponse, statsResponse, logsResponse] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/system/info`),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/system/health`),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/system/stats`),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/system/logs`)
+        fetch(`${getApiBaseUrl()}/api/v1/system/info`),
+        fetch(`${getApiBaseUrl()}/api/v1/system/health`),
+        fetch(`${getApiBaseUrl()}/api/v1/system/stats`),
+        fetch(`${getApiBaseUrl()}/api/v1/system/logs`)
       ]);
 
       // Parse responses
@@ -82,7 +83,7 @@ export function useAboutData() {
     try {
       console.log('Checking for updates...');
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/system/check-updates`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/system/check-updates`);
       const updateData = await response.json();
       
       console.log('Update check response:', updateData);
@@ -145,7 +146,7 @@ export function useSystemInfo() {
     setLoading(true);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/system/info`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/system/info`);
       const data = await response.json();
       
       if (data.success) {
@@ -179,7 +180,7 @@ export function useHealthStatus() {
     setLoading(true);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/system/health`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/system/health`);
       const data = await response.json();
       
       if (data.success) {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { saveSettingsWithCacheClear } from '@/lib/settings-utils';
 import { AwardsSettings, defaultAwardsSettings } from './types';
+import { getApiBaseUrl } from '@/lib/utils'
 
 export function useAwardsSettings() {
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,7 @@ export function useAwardsSettings() {
     try {
       console.log('Loading awards settings...');
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/config/badge_settings_awards.yml`);
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/config/badge_settings_awards.yml`);
       const data = await response.json();
       
       console.log('Loaded awards config:', data);
