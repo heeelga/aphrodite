@@ -101,7 +101,7 @@ def load_settings(path="settings.yaml"):
 # MODIFIED: Changed endpoint to include user_id
 def get_jellyfin_item_details(url, api_key, user_id, item_id):
     """Get detailed information about a Jellyfin item."""
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     # CHANGED: Use the /Users/{UserId}/Items/{ItemId} endpoint structure
     endpoint = f"{url}/Users/{user_id}/Items/{item_id}"
     

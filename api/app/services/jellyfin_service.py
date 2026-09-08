@@ -180,9 +180,11 @@ class JellyfinService:
         # This prevents "Event loop is closed" errors in the worker environment
         # and avoids session conflicts during batch processing.
         timeout = aiohttp.ClientTimeout(total=timeout_seconds)
-        # Use X-Emby-Token header like v1, not URL parameters
+        # Jellyfin 12 ships with EnableLegacyAuthorization=false, which disables the
+        # legacy X-Emby-Token header and ?api_key= query parameter. Use the standard
+        # MediaBrowser Authorization header instead so auth keeps working on 10.x-12.x.
         headers = {
-            "X-Emby-Token": self.api_key,
+            "Authorization": f'MediaBrowser Token="{self.api_key}"',
             "Content-Type": "application/json",
         }
         return aiohttp.ClientSession(timeout=timeout, headers=headers)
@@ -688,9 +690,9 @@ class JellyfinService:
             # Jellyfin API endpoint for setting primary image
             url = urljoin(self.base_url, f"/Items/{item_id}/Images/Primary")
             
-            # Headers for Base64 upload (v1 method)
+            # Headers for Base64 upload (Jellyfin 12 requires MediaBrowser auth header)
             headers = {
-                "X-Emby-Token": self.api_key,
+                "Authorization": f'MediaBrowser Token="{self.api_key}"',
                 "Content-Type": content_type
             }
             
@@ -874,7 +876,7 @@ class JellyfinService:
         """Verify that the uploaded image is retrievable (v1 method)"""
         try:
             url = urljoin(self.base_url, f"/Items/{item_id}/Images/Primary")
-            headers = {"X-Emby-Token": self.api_key}
+            headers = {"Authorization": f'MediaBrowser Token="{self.api_key}"'}
             
             session = await self._get_session()
             try:

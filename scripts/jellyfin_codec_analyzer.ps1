@@ -37,7 +37,7 @@ function Invoke-JellyfinAPI {
     )
     
     $headers = @{
-        "X-Emby-Token" = $ApiKey
+        "Authorization" = "MediaBrowser Token=`"$ApiKey`""
         "Content-Type" = "application/json"
     }
     

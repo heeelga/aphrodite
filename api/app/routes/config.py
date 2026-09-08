@@ -304,8 +304,10 @@ async def test_jellyfin_connection(request: JellyfinTestRequest):
         
         # Prepare the test URL
         test_url = f"{request.url.rstrip('/')}/System/Info"
+        # Jellyfin 12 disables the legacy X-Emby-Token header by default
+        # (EnableLegacyAuthorization=false); use the MediaBrowser auth header.
         headers = {
-            "X-Emby-Token": request.api_key,
+            "Authorization": f'MediaBrowser Token="{request.api_key}"',
             "Content-Type": "application/json"
         }
         

@@ -17,7 +17,7 @@ from aphrodite_helpers.minimal_logger import log_error, log_warning, log_milesto
 
 def get_jellyfin_item_details(url, api_key, user_id, item_id, timeout=30):
     """Get detailed information about a Jellyfin item."""
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     endpoint = f"{url}/Users/{user_id}/Items/{item_id}"
     
     try:
@@ -33,7 +33,7 @@ def get_jellyfin_item_details(url, api_key, user_id, item_id, timeout=30):
 
 def get_series_episodes(url, api_key, user_id, series_id, max_episodes=None):
     """Get all episodes for a TV series with improved timeout and limits."""
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     
     # Get episodes recursively from the series
     params = {

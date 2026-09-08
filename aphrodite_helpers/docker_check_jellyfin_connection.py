@@ -26,7 +26,7 @@ def check_jellyfin_connection(url, api_key, user_id=None):
     if url.endswith('/'):
         url = url[:-1]
     
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     
     try:
         # First, check if the server is responding at all
@@ -89,7 +89,7 @@ def check_jellyfin_connection(url, api_key, user_id=None):
 
 def get_jellyfin_libraries(url, api_key, user_id):
     """Get all libraries (views) from Jellyfin for a specific user."""
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     try:
         logger.info(f"Getting libraries: {url}/Users/{user_id}/Views")
         resp = requests.get(f"{url}/Users/{user_id}/Views", headers=headers)

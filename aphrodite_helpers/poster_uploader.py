@@ -76,7 +76,7 @@ class PosterUploader:
             return False
 
         headers = {
-            "X-Emby-Token": self.api_key,
+            "Authorization": f'MediaBrowser Token="{self.api_key}"',
             "Content-Type": content_type,
         }
 
@@ -126,7 +126,7 @@ class PosterUploader:
         try:
             resp = requests.get(
                 url,
-                headers={"X-Emby-Token": self.api_key},
+                headers={"Authorization": f'MediaBrowser Token="{self.api_key}"'},
                 timeout=timeout,
                 stream=True,
             )

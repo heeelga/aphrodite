@@ -25,7 +25,7 @@ class AwardsFetcher:
         self.omdb_settings = settings.get("api_keys", {}).get("OMDB", [{}])[0]
         
         # Setup headers for Jellyfin API calls
-        self.jellyfin_headers = {"X-Emby-Token": self.jellyfin_settings.get("api_key", "")}
+        self.jellyfin_headers = {"Authorization": f'MediaBrowser Token="{self.jellyfin_settings.get("api_key", "")}"'}
         
         # Initialize cache
         self.cache = {}
