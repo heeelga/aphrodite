@@ -1,6 +1,6 @@
 def get_library_items(url, api_key, user_id, view_id, limit=None):
     """Get all items in a specific Jellyfin library (view)."""
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     
     # First, determine the library type (Movies, TV Shows, etc.)
     library_info_resp = requests.get(f"{url}/Users/{user_id}/Views", headers=headers)

@@ -11,7 +11,7 @@ def download_poster(jellyfin_url, api_key, item_id, output_dir="posters/original
     """
     Downloads a primary poster for a given Jellyfin item ID.
     """
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     poster_url = f"{jellyfin_url}/Items/{item_id}/Images/Primary"
 
     try:

@@ -39,7 +39,7 @@ class MetadataTagger:
         self.jellyfin_url = jellyfin_url.rstrip("/")
         self.api_key = api_key
         self.user_id = user_id
-        self.headers = {"X-Emby-Token": api_key, "Content-Type": "application/json"}
+        self.headers = {"Authorization": f'MediaBrowser Token="{api_key}"', "Content-Type": "application/json"}
         
     def get_item_metadata(self, item_id: str) -> Optional[dict]:
         """

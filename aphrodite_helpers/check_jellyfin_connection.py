@@ -10,7 +10,7 @@ from aphrodite_helpers.v2_settings_bridge import load_settings
 
 def get_jellyfin_libraries(url, api_key, user_id):
     """Get all libraries (views) from Jellyfin for a specific user."""
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     try:
         resp = requests.get(f"{url}/Users/{user_id}/Views", headers=headers)
         resp.raise_for_status()
@@ -21,7 +21,7 @@ def get_jellyfin_libraries(url, api_key, user_id):
 
 def get_library_item_count(url, api_key, user_id, view_id):
     """Get the total number of items in a Jellyfin library."""
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     params = {
         "ParentId": view_id,
         "Recursive": "true",
@@ -41,7 +41,7 @@ def get_library_item_count(url, api_key, user_id, view_id):
 
 def get_library_parent_items_count(url, api_key, user_id, view_id):
     """Get the number of parent-level items in a library (not including child items like episodes)."""
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     params = {
         "ParentId": view_id,
         "Recursive": "false",  # Only get direct children of the library
@@ -59,7 +59,7 @@ def get_library_parent_items_count(url, api_key, user_id, view_id):
 
 def get_library_items(url, api_key, user_id, view_id, limit=None):
     """Get all items in a specific Jellyfin library (view)."""
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     
     # First, determine the library type (Movies, TV Shows, etc.)
     library_info_resp = requests.get(f"{url}/Users/{user_id}/Views", headers=headers)
@@ -130,7 +130,7 @@ def get_library_items(url, api_key, user_id, view_id, limit=None):
 
 def check_jellyfin_connection(url, api_key, user_id=None):
     """Check if we can connect to the Jellyfin server."""
-    headers = {"X-Emby-Token": api_key}
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}"'}
     try:
         # First, check if the server is responding at all
         resp = requests.get(f"{url}/System/Info", headers=headers)

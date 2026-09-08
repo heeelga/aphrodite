@@ -42,7 +42,7 @@ def get_media_info(media_id: str) -> Optional[Dict]:
     url = f"{JELLYFIN_URL}/Items/{media_id}"
     
     headers = {
-        "X-Emby-Token": JELLYFIN_API_KEY,
+        "Authorization": f'MediaBrowser Token="{JELLYFIN_API_KEY}"',
         "Content-Type": "application/json"
     }
     

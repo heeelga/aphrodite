@@ -28,7 +28,7 @@ class ReviewFetcher:
         self.anidb_settings = anidb_list[0] if anidb_list else {}
         
         # Setup headers for Jellyfin API calls
-        self.jellyfin_headers = {"X-Emby-Token": self.jellyfin_settings.get("api_key", "")}
+        self.jellyfin_headers = {"Authorization": f'MediaBrowser Token="{self.jellyfin_settings.get("api_key", "")}"'}
         
         # Initialize cache
         self.cache = {}
